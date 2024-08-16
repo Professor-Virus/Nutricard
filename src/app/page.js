@@ -1,85 +1,53 @@
 'use client'
-import { useState, useEffect } from 'react'
-import { auth, firestore } from './firebase'
-import { onAuthStateChanged, GoogleAuthProvider, signInWithPopup, createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth'
-import { doc, setDoc } from 'firebase/firestore'
+import { useUser } from '@clerk/nextjs'
+import { useEffect, useState } from 'react'
 import LoginForm from './components/LoginForm'
 import Home from './components/Home'
 import { useRouter } from 'next/navigation'
+import { getStripe } from './stripeClient'
 
 export default function Page() {
-  const [user, setUser] = useState(null)
+  const { isLoaded, isSignedIn, user } = useUser()
+  const [hasSubscription, setHasSubscription] = useState(false)
   const router = useRouter()
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        setUser(user)
-      } else {
-        setUser(null)
-        router.push('/')
-      }
-    })
-    return () => unsubscribe()
-  }, [router])
+    if (isLoaded && isSignedIn) {
+      // Check subscription status
+      checkSubscription()
+    }
+  }, [isLoaded, isSignedIn])
 
-  const handleGoogleLogin = async () => {
-    const provider = new GoogleAuthProvider()
-    try {
-      const result = await signInWithPopup(auth, provider)
-      const user = result.user
-    } catch (error) {
-      console.error('Error logging in with Google:', error)
+  const checkSubscription = async () => {
+    const response = await fetch('/api/check-subscription');
+    const data = await response.json();
+    setHasSubscription(data.hasSubscription);
+  }
+
+  const handleSubscribe = async () => {
+    // This call will ensure the user has a Stripe customer ID
+    await fetch('/api/check-subscription');
+    
+    const stripe = await getStripe();
+    const { error } = await stripe.redirectToCheckout({
+      lineItems: [
+        {
+          price: 'price_1PoYwuFUIGgXxE0FpjIT1pcp',
+          quantity: 1,
+        },
+      ],
+      mode: 'subscription',
+      successUrl: `${window.location.origin}/success`,
+      cancelUrl: `${window.location.origin}/canceled`,
+    });
+    if (error) {
+      console.warn('Error:', error);
     }
   }
 
-  const handleEmailSignup = async (email, password) => {
-    try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password)
-      const user = userCredential.user
-
-      await setDoc(doc(firestore, 'users', user.uid), {
-        uid: user.uid,
-        email: user.email,
-        createdAt: new Date().toISOString()
-      })
-
-      console.log('Signup successful')
-    } catch (error) {
-      console.error('Error signing up with email:', error)
-    }
+  if (!isLoaded || !isSignedIn) {
+    return <LoginForm />
   }
 
-  const handleEmailLogin = async (email, password) => {
-    try {
-      await signInWithEmailAndPassword(auth, email, password)
-      console.log('Login successful')
-    } catch (error) {
-      console.error('Error logging in with email:', error)
-    }
-  }
-
-  const handleLogout = async () => {
-    try {
-      await auth.signOut()
-      setUser(null)
-      router.push('/')
-    } catch (error) {
-      console.error('Error logging out:', error)
-    }
-  }
-
-  if (!user) {
-    return (
-      <div className="app-container">
-        <LoginForm
-          onGoogleLogin={handleGoogleLogin}
-          onEmailLogin={handleEmailLogin}
-          onEmailSignup={handleEmailSignup}
-        />
-      </div>
-    );
-  }
-
-  return <Home user={user} onLogout={handleLogout} />
+  return <Home user={user} hasSubscription={hasSubscription} onSubscribe={handleSubscribe} />
 }
