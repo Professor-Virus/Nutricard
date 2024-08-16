@@ -1,10 +1,10 @@
 'use client'
 import { useUser } from '@clerk/nextjs'
 import { useEffect, useState } from 'react'
-import LoginForm from './components/LoginForm'
-import Home from './components/Home'
+import LoginForm from '../components/LoginForm'
+import Home from '../components/Home'
 import { useRouter } from 'next/navigation'
-import { getStripe } from './stripeClient'
+import { getStripe } from '../stripeClient'
 
 export default function Page() {
   const { isLoaded, isSignedIn, user } = useUser()
