@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { signOut } from 'firebase/auth'
 import { auth } from '../firebase'
+import { useClerk } from '@clerk/nextjs'
 
 export default function Navbar({ onLogout }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
@@ -9,8 +10,14 @@ export default function Navbar({ onLogout }) {
 
   const handleLogout = async () => {
     try {
+      // Sign out from Firebase
       await signOut(auth)
-      console.log('Logged out successfully') // Debugging log
+      console.log('Logged out from Firebase successfully')
+
+      // Sign out from Clerk
+      await clerkSignOut()
+      console.log('Logged out from Clerk successfully')
+
       if (onLogout) onLogout() // Call the onLogout callback if provided
       router.push('/') // Redirect to login page or homepage
     } catch (error) {

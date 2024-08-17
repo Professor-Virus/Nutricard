@@ -1,9 +1,9 @@
 import Navbar from "./Navbar";
 
-export default function Home({ user, hasSubscription, onSubscribe }) {
+export default function Home({hasSubscription, onSubscribe, onLogout }) {
   return (
     <div className="min-h-screen flex flex-col">
-      <Navbar user={user} />
+      <Navbar onLogout={onLogout} />
       <div className="flex-grow flex items-center justify-center bg-gray-100">
         {hasSubscription ? (
           <h1 className="text-4xl font-bold text-gray-800">Welcome to the Premium Version!</h1>
