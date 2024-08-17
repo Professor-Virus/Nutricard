@@ -6,13 +6,13 @@ import { getFirestore } from 'firebase/firestore'
 
 //AAYUSH'S FIREBASE CONNECTION BELOW
 const firebaseConfig = {
-    apiKey: "AIzaSyCoQCC1k-LGv8Kh6bCNMmB40taVLGXMVhI",
-    authDomain: "nutricard-385d2.firebaseapp.com",
-    projectId: "nutricard-385d2",
-    storageBucket: "nutricard-385d2.appspot.com",
-    messagingSenderId: "426424370116",
-    appId: "1:426424370116:web:6b6a61176b96e4221b1a91",
-    measurementId: "G-R5E9YMJD7Y"
+    apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+    authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+    projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+    storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+    appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+    measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
   };
 
 
