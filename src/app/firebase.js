@@ -4,7 +4,7 @@ import { getFirestore } from 'firebase/firestore'
 
 //TWO FIREBASE CONNECTIONS: PICK ACCORDINGLY
 
-// AAYUSH'S FIREBASE CONNECTION BELOW
+//AAYUSH'S FIREBASE CONNECTION BELOW
 const firebaseConfig = {
     apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
     authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
@@ -15,15 +15,6 @@ const firebaseConfig = {
     measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
   };
 
-// const firebaseConfig = {
-//   apiKey: "AIzaSyC0GGCygAk90Z-qNJ2wOmvoQsGv16S4CE8",
-//   authDomain: "ai-flashcards-22591.firebaseapp.com",
-//   projectId: "ai-flashcards-22591",
-//   storageBucket: "ai-flashcards-22591.appspot.com",
-//   messagingSenderId: "1065176410200",
-//   appId: "1:1065176410200:web:3c0e5083b969c1170b022d",
-//   measurementId: "G-VXLHZEJJNT"
-// };
 
 const app = initializeApp(firebaseConfig)
 const auth = getAuth(app)

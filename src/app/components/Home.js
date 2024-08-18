@@ -2,24 +2,60 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Navbar from "./Navbar";
 import { firestore } from "../firebase";
-import { collection, query, where, onSnapshot } from "firebase/firestore";
-import Link from 'next/link'; // Import Link for navigation
+import { doc, collection, query, where, onSnapshot, setDoc, getDoc } from "firebase/firestore";
+import Link from "next/link"; // Import Link for navigation
 
 export default function Home({ user, hasSubscription, onSubscribe }) {
   const [flashcards, setFlashcards] = useState([]);
   const router = useRouter();
 
+  // useEffect(() => {
+  //   if (user) {
+  //     const q = query(collection(firestore, "flashcards"), where("userId", "==", user.id));
+  //     const unsubscribe = onSnapshot(q, (querySnapshot) => {
+  //       const userFlashcards = [];
+  //       querySnapshot.forEach((doc) => {
+  //         userFlashcards.push({ id: doc.id, ...doc.data() });
+  //       });
+  //       setFlashcards(userFlashcards);
+  //     });
+  //     return () => unsubscribe();
+  //   }
+  // }, [user]);
+
   useEffect(() => {
+    console.log(user.emailAddresses[0].id)
     if (user) {
-      const q = query(collection(firestore, "flashcards"), where("userId", "==", user.id));
-      const unsubscribe = onSnapshot(q, (querySnapshot) => {
-        const userFlashcards = [];
-        querySnapshot.forEach((doc) => {
-          userFlashcards.push({ id: doc.id, ...doc.data() });
+      const id = user.id
+      const userRef = doc(firestore, "users", id);
+
+      const checkAndCreateUserDoc = async () => {
+        const userDoc = await getDoc(userRef);
+
+        if (!userDoc.exists()) {
+          // If the user document doesn't exist, create it with an empty flashcards array and isSubscribed flag
+          await setDoc(userRef, { flashcards: [], isSubscribed: false, session_id: null });
+        }
+      };
+
+      // Call the async function to ensure the user document exists
+      checkAndCreateUserDoc().then(() => {
+        // Set up a query to listen to the user's flashcards
+        const q = query(
+          collection(firestore, "flashcards"),
+          where("userId", "==", id)
+        );
+        const unsubscribe = onSnapshot(q, (querySnapshot) => {
+          const userFlashcards = [];
+          querySnapshot.forEach((doc) => {
+            userFlashcards.push({ id: doc.id, ...doc.data() });
+          });
+          setFlashcards(userFlashcards);
         });
-        setFlashcards(userFlashcards);
+
+        // Cleanup the subscription when the component unmounts or when the user changes
+        return () => unsubscribe();
       });
-      return () => unsubscribe();
     }
   }, [user]);
 
@@ -42,7 +78,9 @@ export default function Home({ user, hasSubscription, onSubscribe }) {
           {flashcards.map((card) => (
             <Link href={`/flashcard/${card.id}`} key={card.id}>
               <div className="bg-gray-800 p-4 rounded-lg shadow-lg cursor-pointer hover:bg-gray-700 transition duration-200">
-                <h3 className="font-bold mb-2 text-lg text-blue-400">{card.question}</h3>
+                <h3 className="font-bold mb-2 text-lg text-blue-400">
+                  {card.question}
+                </h3>
                 <p className="text-gray-300 truncate">{card.answer}</p>
               </div>
             </Link>

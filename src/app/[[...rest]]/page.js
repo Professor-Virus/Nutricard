@@ -39,7 +39,7 @@ export default function Page() {
           },
         ],
         mode: 'subscription',
-        successUrl: `${window.location.origin}/success`,
+        successUrl: `${window.location.origin}/success/?session_id={CHECKOUT_SESSION_ID}`,
         cancelUrl: `${window.location.origin}/canceled`,
       })
 
@@ -57,3 +57,4 @@ export default function Page() {
 
   return <Home user={user} hasSubscription={hasSubscription} onSubscribe={handleSubscribe} />
 }
+
