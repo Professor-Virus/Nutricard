@@ -1,10 +1,35 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Navbar from "./Navbar";
+import { doc, getDoc, setDoc, updateDoc, arrayUnion } from "firebase/firestore";
+import { Firestore } from "firebase/firestore";
+import { firestore } from "../firebase";
 
 export default function Home({ user, hasSubscription, onSubscribe }) {
   const [flashcards, setFlashcards] = useState([]);
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState("");
+
+  console.log(user.emailAddresses[0].id)
+
+  useEffect(() => {
+    const checkAndCreateUserDoc = async () => {
+      if (user && user.emailAddresses[0].id) {
+        const userRef = doc(firestore, "users", user.id);
+        const userDoc = await getDoc(userRef);
+
+        if (!userDoc.exists()) {
+          // User document doesn't exist, create it with initial fields
+          await setDoc(userRef, {
+            hasSubscription: false,
+            flashcards: [],
+          });
+        }
+        // If user document exists, do nothing
+      }
+    };
+
+    checkAndCreateUserDoc();
+  }, [user, hasSubscription]);
 
   const addFlashcard = () => {
     if (question && answer) {
@@ -18,17 +43,17 @@ export default function Home({ user, hasSubscription, onSubscribe }) {
     try {
       const topic = prompt("Enter a topic for flashcards:");
       if (!topic) return;
-  
+
       const response = await fetch("/api/generate-flashcards", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ topic }),
       });
-  
+
       if (!response.ok) {
         throw new Error("Failed to generate flashcards");
       }
-  
+
       const aiFlashcards = await response.json();
       setFlashcards([...flashcards, ...aiFlashcards]);
     } catch (error) {
