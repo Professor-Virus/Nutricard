@@ -3,6 +3,7 @@ import Stripe from "stripe";
 import { firestore } from '../../firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 
+
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 export async function GET(req) {
@@ -44,6 +45,7 @@ export async function GET(req) {
     });
   }
 }
+
 
 async function getStripeCustomerId(userId) {
   const userRef = doc(firestore, 'users', userId);
