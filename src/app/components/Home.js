@@ -9,22 +9,8 @@ export default function Home({ user, hasSubscription, onSubscribe }) {
   const [flashcards, setFlashcards] = useState([]);
   const router = useRouter();
 
-  // useEffect(() => {
-  //   if (user) {
-  //     const q = query(collection(firestore, "flashcards"), where("userId", "==", user.id));
-  //     const unsubscribe = onSnapshot(q, (querySnapshot) => {
-  //       const userFlashcards = [];
-  //       querySnapshot.forEach((doc) => {
-  //         userFlashcards.push({ id: doc.id, ...doc.data() });
-  //       });
-  //       setFlashcards(userFlashcards);
-  //     });
-  //     return () => unsubscribe();
-  //   }
-  // }, [user]);
-
   useEffect(() => {
-    console.log(user.emailAddresses[0].id)
+    
     if (user) {
       const id = user.id
       const userRef = doc(firestore, "users", id);

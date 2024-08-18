@@ -28,9 +28,7 @@ export default function SuccessPage() {
       })
       .then(response => response.json())
       .then(data => {
-        if (data.success) {
-          router.push('/thank-you');
-        } else {
+        if (!data.success) {
           console.error('Failed to update subscription');
         }
       })
@@ -42,5 +40,5 @@ export default function SuccessPage() {
     }
   }, [searchParams, user, router]);
 
-  return <div>Processing your subscription...</div>;
+  return <div>This is your paid page</div>;
 }
