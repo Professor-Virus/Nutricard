@@ -1,6 +1,6 @@
-import { authMiddleware } from "@clerk/nextjs";
+import { clerkMiddleware } from "@clerk/nextjs";
  
-export default authMiddleware({
+export default clerkMiddleware({
   publicRoutes: ["/", "/(.*)", "/api/check-subscription"]
 });
  

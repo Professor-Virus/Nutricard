@@ -5,33 +5,28 @@ import LoginForm from '../components/LoginForm'
 import Home from '../components/Home'
 import { useRouter } from 'next/navigation'
 import { getStripe } from '../stripeClient'
-// Import signOut from Clerk directly
-import { signOut as clerkSignOut } from '@clerk/nextjs'
-// Import Firebase auth signOut
-import { signOut as firebaseSignOut } from 'firebase/auth'
-import { auth } from '../firebase'
 
 export default function Page() {
   const { isLoaded, isSignedIn, user } = useUser()
   const [hasSubscription, setHasSubscription] = useState(false)
   const router = useRouter()
 
-  const handleLogout = async () => {
-    try {
-      // Sign out from Firebase
-      await firebaseSignOut(auth)
-      console.log('Logged out from Firebase successfully')
+  // const handleLogout = async () => {
+  //   try {
+  //     console.log('Attempting to log out from Firebase...');
+  //     await firebaseSignOut(auth);
+  //     console.log('Logged out from Firebase successfully');
 
-      // Sign out from Clerk
-      await clerkSignOut()
-      console.log('Logged out from Clerk successfully')
+  //   console.log('Attempting to log out from Clerk...');
+  //   await clerkSignOut();
+  //   console.log('Logged out from Clerk successfully');
 
-      // Redirect to login page
-      router.push('/')
-    } catch (error) {
-      console.error('Error logging out:', error)
-    }
-  }
+  //   console.log('Redirecting to login page...');
+  //   await router.push('/');
+  //   } catch (error) {
+  //     console.error('Error logging out:', error)
+  //   }
+  // }
 
   useEffect(() => {
     if (isLoaded && isSignedIn) {
@@ -71,5 +66,5 @@ export default function Page() {
     return <LoginForm />
   }
 
-  return <Home user={user} hasSubscription={hasSubscription} onSubscribe={handleSubscribe} onLogout={handleLogout} />
+  return <Home user={user} hasSubscription={hasSubscription} onSubscribe={handleSubscribe} />
 }
