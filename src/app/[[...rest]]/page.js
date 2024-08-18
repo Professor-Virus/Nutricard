@@ -1,4 +1,5 @@
 'use client'
+
 import { useUser } from '@clerk/nextjs'
 import { useEffect, useState } from 'react'
 import LoginForm from '../components/LoginForm'
@@ -11,26 +12,8 @@ export default function Page() {
   const [hasSubscription, setHasSubscription] = useState(false)
   const router = useRouter()
 
-  // const handleLogout = async () => {
-  //   try {
-  //     console.log('Attempting to log out from Firebase...');
-  //     await firebaseSignOut(auth);
-  //     console.log('Logged out from Firebase successfully');
-
-  //   console.log('Attempting to log out from Clerk...');
-  //   await clerkSignOut();
-  //   console.log('Logged out from Clerk successfully');
-
-  //   console.log('Redirecting to login page...');
-  //   await router.push('/');
-  //   } catch (error) {
-  //     console.error('Error logging out:', error)
-  //   }
-  // }
-
   useEffect(() => {
     if (isLoaded && isSignedIn) {
-      // Check subscription status
       checkSubscription()
     }
   }, [isLoaded, isSignedIn])
@@ -43,11 +26,9 @@ export default function Page() {
 
   const handleSubscribe = async () => {
     try {
-      await fetch('/api/check-subscription');
-      
-      const stripe = await getStripe();
+      const stripe = await getStripe()
       if (!stripe) {
-        throw new Error('Failed to initialize Stripe');
+        throw new Error('Failed to initialize Stripe')
       }
       
       const { error } = await stripe.redirectToCheckout({
@@ -60,15 +41,15 @@ export default function Page() {
         mode: 'subscription',
         successUrl: `${window.location.origin}/success`,
         cancelUrl: `${window.location.origin}/canceled`,
-      });
-      
+      })
+
       if (error) {
-        throw error;
+        throw error
       }
     } catch (error) {
-      console.error('Error in handleSubscribe:', error);
+      console.error('Error in handleSubscribe:', error)
     }
-  };
+  }
 
   if (!isLoaded || !isSignedIn) {
     return <LoginForm />

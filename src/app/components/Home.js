@@ -1,81 +1,51 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Navbar from "./Navbar";
+import { firestore } from "../firebase";
+import { collection, query, where, onSnapshot } from "firebase/firestore";
+import Link from 'next/link'; // Import Link for navigation
 
 export default function Home({ user, hasSubscription, onSubscribe }) {
   const [flashcards, setFlashcards] = useState([]);
-  const [question, setQuestion] = useState("");
-  const [answer, setAnswer] = useState("");
+  const router = useRouter();
 
-  const addFlashcard = () => {
-    if (question && answer) {
-      setFlashcards([...flashcards, { question, answer }]);
-      setQuestion("");
-      setAnswer("");
-    }
-  };
-
-  const generateAIFlashcards = async () => {
-    try {
-      const topic = prompt("Enter a topic for flashcards:");
-      if (!topic) return;
-  
-      const response = await fetch("/api/generate-flashcards", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ topic }),
+  useEffect(() => {
+    if (user) {
+      const q = query(collection(firestore, "flashcards"), where("userId", "==", user.id));
+      const unsubscribe = onSnapshot(q, (querySnapshot) => {
+        const userFlashcards = [];
+        querySnapshot.forEach((doc) => {
+          userFlashcards.push({ id: doc.id, ...doc.data() });
+        });
+        setFlashcards(userFlashcards);
       });
-  
-      if (!response.ok) {
-        throw new Error("Failed to generate flashcards");
-      }
-  
-      const aiFlashcards = await response.json();
-      setFlashcards([...flashcards, ...aiFlashcards]);
-    } catch (error) {
-      console.error("Error generating AI flashcards:", error);
-      alert("Failed to generate AI flashcards. Please try again.");
+      return () => unsubscribe();
     }
+  }, [user]);
+
+  const goToCreateFlashcard = () => {
+    router.push("/create-flashcard");
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-gray-900 text-white">
       <Navbar hasSubscription={hasSubscription} onSubscribe={onSubscribe} />
-      <div className="flex-grow p-8 bg-gray-100">
-        <h1 className="text-3xl font-bold mb-6">Create Flashcards</h1>
-        <div className="mb-6">
-          <input
-            type="text"
-            placeholder="Question"
-            value={question}
-            onChange={(e) => setQuestion(e.target.value)}
-            className="w-full p-2 mb-2 border rounded"
-          />
-          <input
-            type="text"
-            placeholder="Answer"
-            value={answer}
-            onChange={(e) => setAnswer(e.target.value)}
-            className="w-full p-2 mb-2 border rounded"
-          />
-          <button
-            onClick={addFlashcard}
-            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mr-2"
-          >
-            Add Flashcard
-          </button>
-          <button
-            onClick={generateAIFlashcards}
-            className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
-          >
-            Generate AI Flashcards
-          </button>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {flashcards.map((card, index) => (
-            <div key={index} className="bg-white p-4 rounded shadow">
-              <h3 className="font-bold mb-2">{card.question}</h3>
-              <p>{card.answer}</p>
-            </div>
+      <div className="flex-grow p-8">
+        <h1 className="text-4xl font-bold mb-6">Your Flashcards</h1>
+        <button
+          onClick={goToCreateFlashcard}
+          className="bg-blue-600 hover:bg-blue-800 text-white font-bold py-2 px-4 rounded mb-6 transition duration-200"
+        >
+          Create Flashcard
+        </button>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {flashcards.map((card) => (
+            <Link href={`/flashcard/${card.id}`} key={card.id}>
+              <div className="bg-gray-800 p-4 rounded-lg shadow-lg cursor-pointer hover:bg-gray-700 transition duration-200">
+                <h3 className="font-bold mb-2 text-lg text-blue-400">{card.question}</h3>
+                <p className="text-gray-300 truncate">{card.answer}</p>
+              </div>
+            </Link>
           ))}
         </div>
       </div>

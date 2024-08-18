@@ -1,3 +1,5 @@
+'use client'
+
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { UserButton } from "@clerk/nextjs";
@@ -7,7 +9,6 @@ export default function Navbar({ hasSubscription, onSubscribe }) {
   const router = useRouter();
 
   const handleNavigation = () => {
-    console.log("Navigating to home");
     router.push("/");
     setIsMenuOpen(false);
   };
