@@ -1,4 +1,4 @@
-import { getAuth } from "@clerk/nextjs/server";
+import { auth } from "@clerk/nextjs";
 import Stripe from "stripe";
 import { firestore } from '../../firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
@@ -6,8 +6,8 @@ import { doc, getDoc, setDoc } from 'firebase/firestore';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
-export async function GET(req) {
-  const { userId } = getAuth(req);
+export async function GET() {
+  const { userId } = auth();
 
   if (!userId) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
