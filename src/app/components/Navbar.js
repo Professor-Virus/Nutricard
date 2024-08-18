@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { UserButton } from "@clerk/nextjs";
 
-export default function Navbar() {
+export default function Navbar({ hasSubscription, onSubscribe }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const router = useRouter();
 
@@ -20,6 +20,19 @@ export default function Navbar() {
       >
         Nutricard
       </div>
+      <nav className="flex items-center space-x-4">
+        {!hasSubscription && (
+          <button
+            onClick={onSubscribe}
+            className="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded"
+          >
+            Upgrade to Premium
+          </button>
+        )}
+        <UserButton />
+      </nav>
+
+      {/* Mobile menu button */}
       <button
         className="lg:hidden p-2 text-white"
         onClick={() => setIsMenuOpen(!isMenuOpen)}
@@ -38,15 +51,22 @@ export default function Navbar() {
           ></path>
         </svg>
       </button>
-      <nav className="hidden lg:flex space-x-4">
-        <UserButton />
-      </nav>
 
       {/* Mobile Menu */}
       {isMenuOpen && (
         <div className="lg:hidden absolute top-16 right-0 bg-gray-900 text-white w-48 shadow-lg rounded-md z-50">
           <ul className="flex flex-col">
-            <li>
+            {!hasSubscription && (
+              <li>
+                <button
+                  onClick={onSubscribe}
+                  className="w-full text-left px-4 py-2 hover:bg-gray-800"
+                >
+                  Upgrade to Premium
+                </button>
+              </li>
+            )}
+            <li className="px-4 py-2">
               <UserButton />
             </li>
           </ul>
