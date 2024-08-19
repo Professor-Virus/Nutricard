@@ -35,12 +35,16 @@ export default function Page() {
       setHasSubscription(data.hasSubscription);
       setPaidRoute(data.sessionId);
       setFlashcards(data.flashCards);
+      if (data.hasSubscription){
+        //How can I route to /success/?session_id={data.sessionId}
+        router.push(`/success/?session_id=${data.sessionId}`);
+      }
     } catch (err) {
       console.error("Error in checkSubscription:", err);
     }
   };
 
-  const handleSubscribe = async () => {
+   const handleSubscribe = async () => {
     try {
       const stripe = await getStripe();
       if (!stripe) {
