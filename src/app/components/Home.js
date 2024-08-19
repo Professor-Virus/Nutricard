@@ -12,6 +12,10 @@ import {
   where,
   onSnapshot,
   deleteDoc,
+  getDoc,
+  updateDoc,
+  setDoc,
+  arrayUnion
 } from "firebase/firestore";
 import { motion } from "framer-motion";
 import OpenAI from "openai";
@@ -26,7 +30,6 @@ export default function Home({ user, hasSubscription, onSubscribe = null }) {
   const router = useRouter();
   const [showForm, setShowForm] = useState(false);
   const [inputText, setInputText] = useState("");
-  const [collectedText, setCollectedText] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleOpenForm = () => {
@@ -37,14 +40,20 @@ export default function Home({ user, hasSubscription, onSubscribe = null }) {
     setShowForm(false);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setCollectedText(inputText);
-    console.log(inputText);
-    fetchResponse(inputText)
-    setLoading(true)
-    setInputText("");
-    setShowForm(false);
+    setLoading(true);
+    try {
+      setShowForm(false);
+      await fetchResponse(inputText);
+      setInputText("");
+      // setShowForm(false);
+    } catch (error) {
+      console.error("Error generating flashcards:", error);
+      alert("Failed to generate flashcards. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const fetchResponse = async (text) => {
@@ -70,26 +79,48 @@ export default function Home({ user, hasSubscription, onSubscribe = null }) {
         messages: [{ role: "user", content: instructionString }],
       });
   
-      console.log(completion.choices[0].message.content);
-      // const answer = completion.choices[0].message.content
-      // const arrayStringMatch = answer.match(/\[.*\];/s);
-      // if (arrayStringMatch) {
-      //   try {
-      //     questions = JSON.parse(arrayStringMatch[0].replace(/;$/, ''));
-      //     console.log(questions);
-      //   } catch (error) {
-      //     console.error('Error parsing the array string:', error);
-      //   }
-      // } else {
-      //   console.error('No array found in the code block.');
-      // }
-      return completion.choices[0].message.content; 
+      const generatedFlashcards = JSON.parse(completion.choices[0].message.content);
+      await saveGeneratedFlashcards(generatedFlashcards);
+
+      return generatedFlashcards;
     } catch (error) {
       console.error("Error in fetchResponse:", error.message || error);
-      // Optionally, re-throw the error or return a fallback value
       throw new Error("Failed to generate questions and answers.");
-    }finally {
-      setLoading(false);
+    }
+  };
+
+  const saveGeneratedFlashcards = async (flashcards) => {
+    if (!user) {
+      alert("You must be logged in to save flashcards.");
+      return;
+    }
+
+    try {
+      const userRef = doc(firestore, "users", user.id);
+      const userDoc = await getDoc(userRef);
+
+      const newFlashcardSet = {
+        id: Date.now().toString(),
+        name: `AI Generated Set - ${new Date().toLocaleDateString()}`,
+        flashcards: flashcards,
+      };
+
+      if (userDoc.exists()) {
+        await updateDoc(userRef, {
+          flashcardSets: arrayUnion(newFlashcardSet)
+        });
+      } else {
+        await setDoc(userRef, {
+          flashcardSets: [newFlashcardSet],
+          isSubscribed: false,
+          session_id: null
+        });
+      }
+
+      alert("AI-generated flashcard set saved successfully!");
+    } catch (error) {
+      console.error("Error saving AI-generated flashcard set: ", error);
+      alert("Failed to save AI-generated flashcard set. Please try again.");
     }
   };
 
@@ -126,10 +157,6 @@ export default function Home({ user, hasSubscription, onSubscribe = null }) {
     }
   };
 
-  const viewFlashcardSet = (setId) => {
-    router.push(`/flashcard-set/${setId}`);
-  };
-
   return (
     <div className="min-h-screen flex flex-col bg-gray-900 text-white">
       <Navbar hasSubscription={hasSubscription} onSubscribe={onSubscribe} />
@@ -142,26 +169,28 @@ export default function Home({ user, hasSubscription, onSubscribe = null }) {
         >
           Your Flashcard Sets
         </motion.h1>
-        <motion.button
-          onClick={goToCreateFlashcard}
-          className="bg-blue-600 hover:bg-blue-800 text-white font-bold py-2 px-4 rounded mb-6"
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          transition={{ duration: 0.2 }}
-        >
-          Create New Flashcard Set
-        </motion.button>
-        {hasSubscription && (
+        <div className="flex mb-6">
           <motion.button
-            onClick={handleOpenForm}
-            className="bg-blue-600 hover:bg-blue-800 text-white font-bold py-2 px-4 rounded mb-6"
+            onClick={goToCreateFlashcard}
+            className="bg-blue-600 hover:bg-blue-800 text-white font-bold py-2 px-4 rounded mr-4"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             transition={{ duration: 0.2 }}
           >
-            Generate AI flashcards
+            Create New Flashcard Set
           </motion.button>
-        )}
+          {hasSubscription && (
+            <motion.button
+              onClick={handleOpenForm}
+              className="bg-purple-600 hover:bg-purple-800 text-white font-bold py-2 px-4 rounded"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              transition={{ duration: 0.2 }}
+            >
+              Generate AI Flashcards
+            </motion.button>
+          )}
+        </div>
 
         <motion.div
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
@@ -221,33 +250,58 @@ export default function Home({ user, hasSubscription, onSubscribe = null }) {
               </div>
             </motion.div>
           ))}
-          {showForm && (
-            <div className="form-container">
-              <form onSubmit={handleSubmit}>
-                <label htmlFor="inputText">Enter your text:</label>
-                <input
-                  type="text"
-                  id="inputText"
-                  value={inputText}
-                  onChange={(e) => setInputText(e.target.value)}
-                  className="text-black"
-                />
-                <button type="submit" className="submit-button">
-                  Submit
-                </button>
-                <button
-                  type="button"
-                  onClick={handleCloseForm}
-                  className="cancel-button"
-                >
-                  Cancel
-                </button>
-              </form>
-            </div>
-          )}
-
-        {loading && (<LoadingAnimation/>)}  
         </motion.div>
+
+        {showForm && (
+          <motion.div
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.div
+              className="bg-gray-800 p-6 rounded-lg shadow-lg w-full max-w-md"
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+            >
+              <h2 className="text-2xl font-bold mb-4">Generate AI Flashcards</h2>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                  <label htmlFor="inputText" className="block mb-2">Enter your text:</label>
+                  <textarea
+                    id="inputText"
+                    value={inputText}
+                    onChange={(e) => setInputText(e.target.value)}
+                    className="w-full p-2 bg-gray-700 text-white rounded"
+                    rows="4"
+                  />
+                </div>
+                <div className="flex justify-end space-x-2">
+                  <button
+                    type="button"
+                    onClick={handleCloseForm}
+                    className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="bg-purple-600 hover:bg-purple-800 text-white font-bold py-2 px-4 rounded"
+                  >
+                    Generate
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </motion.div>
+        )}
+
+        {loading && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+            <LoadingAnimation />
+          </div>
+        )}
       </div>
     </div>
   );
