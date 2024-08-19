@@ -56,7 +56,7 @@ export default function Home({ user, hasSubscription, onSubscribe = null }) {
         { question: "Second question here", answer: "Corresponding answer here" },
         { question: "Third question here", answer: "Corresponding answer here" }
     ]`;
-    
+
     try {
       const openai = new OpenAI({
         baseURL: "https://openrouter.ai/api/v1",
@@ -66,24 +66,24 @@ export default function Home({ user, hasSubscription, onSubscribe = null }) {
       });
   
       const completion = await openai.chat.completions.create({
-        model: "meta-llama/llama-3.1-8b-instruct:free",
+        model: "nousresearch/hermes-3-llama-3.1-405b",
         messages: [{ role: "user", content: instructionString }],
       });
   
       console.log(completion.choices[0].message.content);
-      const answer = completion.choices[0].message.content
-      const arrayStringMatch = answer.match(/\[.*\];/s);
-      if (arrayStringMatch) {
-        try {
-          questions = JSON.parse(arrayStringMatch[0].replace(/;$/, ''));
-          console.log(questions);
-        } catch (error) {
-          console.error('Error parsing the array string:', error);
-        }
-      } else {
-        console.error('No array found in the code block.');
-      }
-      return questions; // Return the generated response if needed
+      // const answer = completion.choices[0].message.content
+      // const arrayStringMatch = answer.match(/\[.*\];/s);
+      // if (arrayStringMatch) {
+      //   try {
+      //     questions = JSON.parse(arrayStringMatch[0].replace(/;$/, ''));
+      //     console.log(questions);
+      //   } catch (error) {
+      //     console.error('Error parsing the array string:', error);
+      //   }
+      // } else {
+      //   console.error('No array found in the code block.');
+      // }
+      return completion.choices[0].message.content; 
     } catch (error) {
       console.error("Error in fetchResponse:", error.message || error);
       // Optionally, re-throw the error or return a fallback value
