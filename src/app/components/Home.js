@@ -29,6 +29,10 @@ export default function Home({ user, hasSubscription, onSubscribe }) {
   const goToCreateFlashcard = () => {
     router.push("/create-flashcard");
   };
+  
+  const editFlashcardSet = (setId) => {
+    router.push(`/edit-flashcard-set/${setId}`);
+  };
 
   const deleteFlashcardSet = async (setId) => {
     try {
@@ -99,6 +103,15 @@ export default function Home({ user, hasSubscription, onSubscribe }) {
                     View
                   </motion.button>
                 </Link>
+                <motion.button
+                    onClick={() => editFlashcardSet(set.id)}
+                    className="bg-green-600 hover:bg-green-800 text-white font-bold py-1 px-2 rounded text-sm mx-2"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    Edit
+                </motion.button>
                 <motion.button
                   onClick={() => deleteFlashcardSet(set.id)}
                   className="bg-red-600 hover:bg-red-800 text-white font-bold py-1 px-2 rounded text-sm"
