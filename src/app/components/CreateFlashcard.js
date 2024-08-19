@@ -1,12 +1,13 @@
 'use client'
 
 import { useState } from "react";
-import { collection, addDoc } from "firebase/firestore";
+import { doc, getDoc, updateDoc, setDoc, arrayUnion } from "firebase/firestore";
 import { firestore } from "../firebase";
 import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 
 export default function CreateFlashcard() {
+  const [setName, setSetName] = useState("");
   const [flashcards, setFlashcards] = useState([{ question: "", answer: "" }]);
   const { user } = useUser();
   const router = useRouter();
@@ -28,31 +29,54 @@ export default function CreateFlashcard() {
   };
 
   const saveFlashcards = async () => {
+    if (!user) {
+      alert("You must be logged in to save flashcards.");
+      return;
+    }
+
     try {
-      const flashcardsCollection = collection(firestore, "flashcards");
-      const batch = writeBatch(firestore);
-  
-      flashcards.forEach((card) => {
-        const newDocRef = doc(flashcardsCollection);
-        batch.set(newDocRef, {
-          userId: user.id,
-          question: card.question,
-          answer: card.answer,
+      const userRef = doc(firestore, "users", user.id);
+      const userDoc = await getDoc(userRef);
+
+      const newFlashcardSet = {
+        id: Date.now().toString(), // Generate a unique ID
+        name: setName,
+        flashcards: flashcards,
+      };
+
+      if (userDoc.exists()) {
+        // If the user document exists, update it
+        await updateDoc(userRef, {
+          flashcardSets: arrayUnion(newFlashcardSet)
         });
-      });
-  
-      await batch.commit();
-      alert("Flashcards saved successfully!");
+      } else {
+        // If the user document doesn't exist, create it
+        await setDoc(userRef, {
+          flashcardSets: [newFlashcardSet],
+          isSubscribed: false,
+          session_id: null
+        });
+      }
+
+      alert("Flashcard set saved successfully!");
       router.push("/");
     } catch (error) {
-      console.error("Error saving flashcards: ", error);
-      alert("Failed to save flashcards. Please try again.");
+      console.error("Error saving flashcard set: ", error);
+      alert("Failed to save flashcard set. Please try again.");
     }
   };
 
+
   return (
     <div className="min-h-screen p-8 bg-gray-900 text-white">
-      <h1 className="text-4xl font-bold mb-6 text-center">Create Flashcards</h1>
+      <h1 className="text-4xl font-bold mb-6 text-center">Create Flashcard Set</h1>
+      <input
+        type="text"
+        placeholder="Flashcard Set Name"
+        value={setName}
+        onChange={(e) => setSetName(e.target.value)}
+        className="w-full p-3 mb-6 border border-gray-600 rounded bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
+      />
       {flashcards.map((card, index) => (
         <div key={index} className="mb-8 bg-gray-800 p-4 rounded-lg shadow-lg">
           <input
@@ -89,7 +113,7 @@ export default function CreateFlashcard() {
         onClick={saveFlashcards}
         className="bg-green-600 hover:bg-green-800 text-white font-bold py-2 px-4 rounded transition duration-200 w-full"
       >
-        Save Flashcards
+        Save Flashcard Set
       </button>
     </div>
   );

@@ -1,47 +1,28 @@
+'use client'
+
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Navbar from "./Navbar";
 import { firestore } from "../firebase";
-import { doc, collection, query, where, onSnapshot, setDoc, getDoc } from "firebase/firestore";
-import Link from "next/link"; // Import Link for navigation
+import Link from "next/link";
+import { doc, collection, query, where, onSnapshot, deleteDoc } from "firebase/firestore";
+import { motion } from "framer-motion";
 
 export default function Home({ user, hasSubscription, onSubscribe }) {
-  const [flashcards, setFlashcards] = useState([]);
+  const [flashcardSets, setFlashcardSets] = useState([]);
   const router = useRouter();
 
   useEffect(() => {
-    
     if (user) {
-      const id = user.id
-      const userRef = doc(firestore, "users", id);
-
-      const checkAndCreateUserDoc = async () => {
-        const userDoc = await getDoc(userRef);
-
-        if (!userDoc.exists()) {
-          // If the user document doesn't exist, create it with an empty flashcards array and isSubscribed flag
-          await setDoc(userRef, { flashcards: [], isSubscribed: false, session_id: null });
+      const userRef = doc(firestore, "users", user.id);
+      const unsubscribe = onSnapshot(userRef, (doc) => {
+        if (doc.exists()) {
+          const userData = doc.data();
+          setFlashcardSets(userData.flashcardSets || []);
         }
-      };
-
-      // Call the async function to ensure the user document exists
-      checkAndCreateUserDoc().then(() => {
-        // Set up a query to listen to the user's flashcards
-        const q = query(
-          collection(firestore, "flashcards"),
-          where("userId", "==", id)
-        );
-        const unsubscribe = onSnapshot(q, (querySnapshot) => {
-          const userFlashcards = [];
-          querySnapshot.forEach((doc) => {
-            userFlashcards.push({ id: doc.id, ...doc.data() });
-          });
-          setFlashcards(userFlashcards);
-        });
-
-        // Cleanup the subscription when the component unmounts or when the user changes
-        return () => unsubscribe();
       });
+
+      return () => unsubscribe();
     }
   }, [user]);
 
@@ -49,29 +30,88 @@ export default function Home({ user, hasSubscription, onSubscribe }) {
     router.push("/create-flashcard");
   };
 
+  const deleteFlashcardSet = async (setId) => {
+    try {
+      const userRef = doc(firestore, "users", user.id);
+      await updateDoc(userRef, {
+        flashcardSets: flashcardSets.filter(set => set.id !== setId)
+      });
+    } catch (error) {
+      console.error("Error deleting flashcard set:", error);
+    }
+  };
+
+  const viewFlashcardSet = (setId) => {
+    router.push(`/flashcard-set/${setId}`);
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-gray-900 text-white">
       <Navbar hasSubscription={hasSubscription} onSubscribe={onSubscribe} />
       <div className="flex-grow p-8">
-        <h1 className="text-4xl font-bold mb-6">Your Flashcards</h1>
-        <button
-          onClick={goToCreateFlashcard}
-          className="bg-blue-600 hover:bg-blue-800 text-white font-bold py-2 px-4 rounded mb-6 transition duration-200"
+        <motion.h1
+          className="text-4xl font-bold mb-6"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
         >
-          Create Flashcard
-        </button>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {flashcards.map((card) => (
-            <Link href={`/flashcard/${card.id}`} key={card.id}>
-              <div className="bg-gray-800 p-4 rounded-lg shadow-lg cursor-pointer hover:bg-gray-700 transition duration-200">
-                <h3 className="font-bold mb-2 text-lg text-blue-400">
-                  {card.question}
-                </h3>
-                <p className="text-gray-300 truncate">{card.answer}</p>
+          Your Flashcard Sets
+        </motion.h1>
+        <motion.button
+          onClick={goToCreateFlashcard}
+          className="bg-blue-600 hover:bg-blue-800 text-white font-bold py-2 px-4 rounded mb-6"
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          transition={{ duration: 0.2 }}
+        >
+          Create New Flashcard Set
+        </motion.button>
+        <motion.div
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+          initial="hidden"
+          animate="visible"
+          variants={{
+            hidden: { opacity: 0 },
+            visible: { opacity: 1, transition: { staggerChildren: 0.2 } },
+          }}
+        >
+          {flashcardSets.map((set) => (
+            <motion.div
+              key={set.id}
+              className="bg-gray-800 p-4 rounded-lg shadow-lg"
+              whileHover={{ scale: 1.02 }}
+              transition={{ duration: 0.3 }}
+              variants={{
+                hidden: { opacity: 0, y: 20 },
+                visible: { opacity: 1, y: 0 },
+              }}
+            >
+              <h3 className="font-bold mb-2 text-lg text-blue-400">{set.name}</h3>
+              <p className="text-gray-300 mb-2">{set.flashcards.length} cards</p>
+              <div className="flex justify-between">
+                <Link href={`/flashcard-set/${set.id}`} passHref>
+                  <motion.button
+                    className="bg-blue-600 hover:bg-blue-800 text-white font-bold py-1 px-2 rounded text-sm"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    View
+                  </motion.button>
+                </Link>
+                <motion.button
+                  onClick={() => deleteFlashcardSet(set.id)}
+                  className="bg-red-600 hover:bg-red-800 text-white font-bold py-1 px-2 rounded text-sm"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  Delete
+                </motion.button>
               </div>
-            </Link>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       </div>
     </div>
   );
