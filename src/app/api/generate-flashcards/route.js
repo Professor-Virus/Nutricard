@@ -1,12 +1,12 @@
 import { OpenRouter } from "openai";
-import { auth } from "@clerk/nextjs";
+import { useUser } from "@clerk/nextjs";
 
 const openrouter = new OpenRouter({
   apiKey: process.env.OPENROUTER_API_KEY,
 });
 
 export async function POST(req) {
-  const { userId } = auth();
+  const { userId } = useUser();
 
   if (!userId) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
