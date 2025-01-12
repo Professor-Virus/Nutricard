@@ -24,9 +24,6 @@ A modern web application built with Next.js that combines AI-generated flashcard
 - **Deployment:** Vercel
 
 
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## Acknowledgments
 Aayush Koirala - https://github.com/Akoirala47
@@ -35,3 +32,7 @@ Aayush Koirala - https://github.com/Akoirala47
 For any inquiries or support, please contact us at:
 - aayushkoirala47@gmail.com
 - amanchhetricr7@gmail.com
+
+## License
+
+This project is licensed under the MIT License.
