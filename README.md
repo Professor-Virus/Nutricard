@@ -30,3 +30,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Acknowledgments
 Aayush Koirala - https://github.com/Akoirala47
+
+## Contact
+For any inquiries or support, please contact us at:
+- aayushkoirala47@gmail.com
+- amanchhetricr7@gmail.com
